@@ -34,6 +34,17 @@ local function assert_callback_map(lhs, desc)
   assert_true(map.desc == desc, ("unexpected desc for %s: %s"):format(lhs, vim.inspect(map.desc)))
 end
 
+local function find_fugitive_status_win()
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    local filetype = vim.bo[buf].filetype
+    local name = vim.api.nvim_buf_get_name(buf)
+    if filetype == "fugitive" and name:match("^fugitive://.*//$") then
+      return win
+    end
+  end
+end
+
 vim.api.nvim_exec_autocmds("User", { pattern = "VeryLazy" })
 
 assert_true(command_exists("ToggleGStatus"), "ToggleGStatus command is missing")
@@ -48,3 +59,16 @@ assert_string_map("<leader>gp", "<cmd>Git push<cr>", "Git Push")
 assert_string_map("<F3>", "<cmd>ToggleGit<cr>", "Git Status (toggle)")
 assert_callback_map("<leader>gG", "Lazygit (cwd)")
 assert_callback_map("<leader>ghl", "Git Line History")
+
+vim.cmd("edit lua/config/lazy.lua")
+vim.cmd("ToggleGStatus")
+
+local fugitive_win = find_fugitive_status_win()
+assert_true(fugitive_win ~= nil, "ToggleGStatus did not open a Fugitive status window")
+
+local fugitive_row = vim.api.nvim_win_get_position(fugitive_win)[1]
+local current_row = vim.api.nvim_win_get_position(vim.fn.win_getid(vim.fn.winnr("#")))[1]
+assert_true(fugitive_row < current_row, "ToggleGStatus did not open Fugitive above the current window")
+
+vim.cmd("ToggleGStatus")
+assert_true(find_fugitive_status_win() == nil, "ToggleGStatus did not close the Fugitive status window")
