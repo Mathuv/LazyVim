@@ -14,11 +14,11 @@ return {
           return false
         end
         local name = vim.api.nvim_buf_get_name(buf)
-        return name:match("^fugitive://.*%.git//$") ~= nil
+        return name:match("^fugitive://.*//$") ~= nil
       end
 
       local function open_fugitive_status(height)
-        vim.cmd("Git")
+        vim.cmd("topleft Git")
         if height then
           pcall(vim.api.nvim_win_set_height, 0, height)
         end
